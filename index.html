@@ -165,8 +165,6 @@
           div.classList.add("highlight");
 
           if (audioEnabled && entry.number >= 1 && entry.number <= 120) {
-            audioPlayer.pause();
-            audioPlayer.currentTime = 0;
             audioPlayer.src = entry.number + ".mp3";
             audioPlayer.play().catch(e => console.log("Błąd odtwarzania:", e));
           }
