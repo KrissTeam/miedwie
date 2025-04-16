@@ -164,8 +164,9 @@
         if (now - entry.time < 20000) {
           div.classList.add("highlight");
 
-          if (audioEnabled && entry.number >= 1 && entry.number <= 120 && lastPlayedTime[entry.number] !== entry.time) {
-          lastPlayedTime[entry.number] = entry.time;
+          const key = entry.number + "_" + entry.time;
+        if (audioEnabled && entry.number >= 1 && entry.number <= 120 && !playedKeys.has(key)) {
+          playedKeys.add(key);
             audioPlayer.src = entry.number + ".mp3";
             audioPlayer.play().catch(e => console.log("Błąd odtwarzania:", e));
           }
