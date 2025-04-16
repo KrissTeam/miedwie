@@ -55,8 +55,28 @@
     .smacznego {
       font-size: 3vw;
       color: orange;
-      margin-bottom: 4vh;
+      margin-bottom: 2vh;
       font-style: italic;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1vw;
+    }
+
+    #soundUnlock {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+      z-index: 1000;
+    }
+
+    .speaker {
+      width: 30px;
+      height: 30px;
+      cursor: pointer;
+      filter: invert(80%) sepia(100%) saturate(500%) hue-rotate(5deg);
     }
 
     .number {
@@ -71,6 +91,10 @@
 
     .highlight {
       background-color: darkorange;
+    }
+
+    #audio-player {
+      display: none;
     }
 
     @media (min-width: 768px) {
@@ -91,8 +115,14 @@
   </header>
 
   <h1>Zapraszamy po odbiór gotowego zamówienia</h1>
-  <div class="smacznego">Życzymy Smacznego!</div>
+
+  <div class="smacznego">
+    Życzymy Smacznego!
+    <img src="https://img.icons8.com/ios-filled/50/speaker.png" id="soundUnlock" class="speaker" title="Kliknij, aby włączyć dźwięk">
+  </div>
+
   <div id="calls"></div>
+  <audio id="audio-player" preload="auto"></audio>
 
   <script>
     const firebaseConfig = {
@@ -107,12 +137,16 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    let lastPlayed = null;
     let audioEnabled = false;
+    const audioPlayer = document.getElementById("audio-player");
+    const soundUnlock = document.getElementById("soundUnlock");
 
-    // Odblokowanie dźwięku po pierwszym kliknięciu
-    window.addEventListener("click", () => {
+    soundUnlock.addEventListener("click", () => {
       audioEnabled = true;
+      soundUnlock.style.display = "none";
+      // Odtwarzamy pusty dźwięk aby odblokować
+      audioPlayer.src = "";
+      audioPlayer.play().catch(() => { });
     });
 
     db.ref("calls").on("value", (snapshot) => {
@@ -131,8 +165,8 @@
           div.classList.add("highlight");
 
           if (audioEnabled && entry.number >= 1 && entry.number <= 120) {
-            const audio = new Audio(entry.number + ".mp3");
-            audio.play().catch(e => console.log("Nie można odtworzyć dźwięku:", e));
+            audioPlayer.src = entry.number + ".mp3";
+            audioPlayer.play().catch(e => console.log("Błąd odtwarzania:", e));
           }
         }
 
