@@ -107,7 +107,13 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    let playedNumbers = new Set();
+    let lastPlayed = null;
+    let audioEnabled = false;
+
+    // Odblokowanie dźwięku po pierwszym kliknięciu
+    window.addEventListener("click", () => {
+      audioEnabled = true;
+    });
 
     db.ref("calls").on("value", (snapshot) => {
       const data = snapshot.val();
@@ -124,11 +130,9 @@
         if (now - entry.time < 20000) {
           div.classList.add("highlight");
 
-          // Jeśli numer nie został jeszcze zagrany i jest w zakresie 1-120
-          if (!playedNumbers.has(entry.number) && entry.number >= 1 && entry.number <= 120) {
-            playedNumbers.add(entry.number);
+          if (audioEnabled && entry.number >= 1 && entry.number <= 120) {
             const audio = new Audio(entry.number + ".mp3");
-            audio.play().catch(e => console.log("Błąd odtwarzania:", e));
+            audio.play().catch(e => console.log("Nie można odtworzyć dźwięku:", e));
           }
         }
 
