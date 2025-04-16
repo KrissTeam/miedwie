@@ -63,15 +63,6 @@
       gap: 1vw;
     }
 
-    #soundUnlock {
-      position: absolute;
-      top: 10px;
-      left: 50%;
-      transform: translateX(-50%);
-      text-align: center;
-      z-index: 1000;
-    }
-
     .speaker {
       width: 30px;
       height: 30px;
@@ -118,7 +109,7 @@
 
   <div class="smacznego">
     Życzymy Smacznego!
-    <img src="https://img.icons8.com/ios-filled/50/speaker.png" id="soundUnlock" class="speaker" title="Kliknij, aby włączyć dźwięk">
+    <img src="https://img.icons8.com/ios-filled/50/speaker.png" id="speakerIcon" class="speaker" title="Kliknij, aby włączyć dźwięk">
   </div>
 
   <div id="calls"></div>
@@ -139,15 +130,17 @@
 
     let audioEnabled = false;
     const audioPlayer = document.getElementById("audio-player");
-    const soundUnlock = document.getElementById("soundUnlock");
+    const speakerIcon = document.getElementById("speakerIcon");
 
-    soundUnlock.addEventListener("click", () => {
+    speakerIcon.addEventListener("click", () => {
       audioEnabled = true;
-      soundUnlock.style.display = "none";
+      speakerIcon.style.display = "none";
       // Odtwarzamy pusty dźwięk aby odblokować
       audioPlayer.src = "";
       audioPlayer.play().catch(() => { });
     });
+
+    let lastCalls = new Map();
 
     db.ref("calls").on("value", (snapshot) => {
       const data = snapshot.val();
@@ -158,6 +151,9 @@
       const now = Date.now();
 
       entries.forEach(entry => {
+        const previousTime = lastCalls.get(entry.number);
+        const isNew = previousTime !== entry.time;
+        lastCalls.set(entry.number, entry.time);
         const div = document.createElement("div");
         div.classList.add("number");
 
@@ -165,8 +161,10 @@
           div.classList.add("highlight");
 
           if (audioEnabled && entry.number >= 1 && entry.number <= 120) {
+            if (isNew) {
             audioPlayer.src = entry.number + ".mp3";
             audioPlayer.play().catch(e => console.log("Błąd odtwarzania:", e));
+          }
           }
         }
 
