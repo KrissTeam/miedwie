@@ -131,15 +131,16 @@
     let audioEnabled = false;
     const audioPlayer = document.getElementById("audio-player");
     const speakerIcon = document.getElementById("speakerIcon");
-const soundUnlock = document.getElementById("soundUnlock");
 
-    document.body.addEventListener("click", () => {
+    speakerIcon.addEventListener("click", () => {
       audioEnabled = true;
-      if (soundUnlock) soundUnlock.style.display = "none";
+      speakerIcon.style.display = "none";
       // Odtwarzamy pusty dźwięk aby odblokować
       audioPlayer.src = "";
       audioPlayer.play().catch(() => { });
     });
+
+    let lastCalls = new Map();
 
     db.ref("calls").on("value", (snapshot) => {
       const data = snapshot.val();
@@ -150,6 +151,9 @@ const soundUnlock = document.getElementById("soundUnlock");
       const now = Date.now();
 
       entries.forEach(entry => {
+        const previousTime = lastCalls.get(entry.number);
+        const isNew = previousTime !== entry.time;
+        lastCalls.set(entry.number, entry.time);
         const div = document.createElement("div");
         div.classList.add("number");
 
@@ -157,28 +161,16 @@ const soundUnlock = document.getElementById("soundUnlock");
           div.classList.add("highlight");
 
           if (audioEnabled && entry.number >= 1 && entry.number <= 120) {
+            if (isNew) {
             audioPlayer.src = entry.number + ".mp3";
-            audioQueue.push(entry.number + ".mp3");
-          playNextAudio();
+            audioPlayer.play().catch(e => console.log("Błąd odtwarzania:", e));
+          }
           }
         }
 
         div.textContent = entry.number;
         callsDiv.appendChild(div);
       });
-    });
-
-    function playNextAudio() {
-      if (isPlaying || audioQueue.length === 0) return;
-      isPlaying = true;
-      const src = audioQueue.shift();
-      audioPlayer.src = src;
-      audioPlayer.play().catch(e => console.log("Błąd odtwarzania:", e));
-    }
-
-    audioPlayer.addEventListener("ended", () => {
-      isPlaying = false;
-      playNextAudio();
     });
 
     function updateClock() {
