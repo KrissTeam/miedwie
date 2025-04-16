@@ -1,0 +1,228 @@
+
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel Sterowania</title>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+  <style>
+    #container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      padding: 2vw;
+    }
+
+    #history {
+      width: 100%;
+      max-width: 600px;
+      margin-top: 2vw;
+    }
+
+    @media (min-width: 768px) {
+      #container {
+        max-width: 1000px;
+        margin: auto;
+      }
+    }
+    
+    body {
+      font-family: sans-serif;
+      padding: 5vw;
+    }
+
+    h1 {
+      font-size: 6vw;
+      margin-bottom: 2vh;
+    }
+
+    #orderInput {
+      font-size: 5vw;
+      padding: 2vw;
+      margin: 2vw 0;
+      border-radius: 1vw;
+      width: 90%;
+      text-align: center;
+    }
+
+    .keypad {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2vw;
+      max-width: 400px;
+      margin: auto;
+    }
+
+    .keypad button {
+      font-size: 5vw;
+      padding: 4vw;
+      border-radius: 1vw;
+      border: none;
+      background: #333;
+      color: white;
+    }
+
+    .ok-btn {
+      background: #28a745 !important;
+    }
+
+    .action-btn {
+      font-size: 5vw;
+      padding: 3vw;
+      margin-top: 3vw;
+      width: 100%;
+      border: none;
+      border-radius: 1vw;
+      background: #007bff;
+      color: white;
+    }
+
+    .order {
+      font-size: 4vw;
+      padding: 2vw;
+      margin: 2vw 0;
+      border-radius: 2vw;
+      background: #f0f0f0;
+    }
+
+    .yellow { background: yellow; }
+    .red { background: red; color: white; }
+
+    @media (min-width: 768px) {
+      h1 { font-size: 2vw; }
+      #orderInput, .keypad button, .action-btn { font-size: 1.5vw; }
+      .order { font-size: 1.8vw; padding: 1.5vw; }
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    
+  
+
+  <input type="text" id="orderInput" placeholder="Numer zamówienia">
+
+  <div class="keypad">
+    <button onclick="appendNumber('1')">1</button>
+    <button onclick="appendNumber('2')">2</button>
+    <button onclick="appendNumber('3')">3</button>
+    <button onclick="appendNumber('4')">4</button>
+    <button onclick="appendNumber('5')">5</button>
+    <button onclick="appendNumber('6')">6</button>
+    <button onclick="appendNumber('7')">7</button>
+    <button onclick="appendNumber('8')">8</button>
+    <button onclick="appendNumber('9')">9</button>
+    <button onclick="backspace()">←</button>
+    <button onclick="appendNumber('0')">0</button>
+    <button class="ok-btn" onclick="addOrder()">OK</button>
+  </div>
+
+  <p>Czas od ostatniego zgłoszenia: <span id="timer">0</span> s</p>
+
+  </div><div id="history"></div>
+</div>
+
+  <audio id="audio" src="" preload="auto"></audio>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyBPU4kXi0gq1HuQLYwO8929-1RwBXVwB4k",
+      authDomain: "system-wywolania-54250.firebaseapp.com",
+      databaseURL: "https://system-wywolania-54250-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "system-wywolania-54250",
+      storageBucket: "system-wywolania-54250.firebasestorage.app",
+      messagingSenderId: "700788175836",
+      appId: "1:700788175836:web:40f79c8dfba066c3ff9519"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    let timer = 0;
+    setInterval(() => {
+      timer++;
+      document.getElementById("timer").innerText = timer;
+    }, 1000);
+
+    function appendNumber(num) {
+      const input = document.getElementById("orderInput");
+      input.value += num;
+    }
+
+    function backspace() {
+      const input = document.getElementById("orderInput");
+      input.value = input.value.slice(0, -1);
+    }
+
+    function clearInput() {
+      document.getElementById("orderInput").value = "";
+    }
+
+    function addOrder() {
+      const order = document.getElementById("orderInput").value.trim();
+      if (!order) return;
+      const now = Date.now();
+      db.ref("calls/" + now).set({ number: order, time: now, active: true });
+      playSound(order);
+      document.getElementById("orderInput").value = "";
+      timer = 0;
+    }
+
+    function playSound(order) {
+      const audio = document.getElementById("audio");
+      audio.src = `${order}.mp3`;
+      audio.play().catch(e => console.log("Brak dźwięku:", e));
+    }
+
+    function confirmOrder(time) {
+      db.ref("calls/" + time).remove();
+    }
+
+    function recallOrder(entry) {
+      playSound(entry.number);
+    }
+
+    db.ref("calls").on("value", (snapshot) => {
+      const data = snapshot.val();
+      const history = document.getElementById("history");
+      history.innerHTML = "";
+      if (!data) return;
+      const entries = Object.entries(data).sort((a, b) => b[1].time - a[1].time);
+      const now = Date.now();
+      entries.forEach(([key, entry]) => {
+        const div = document.createElement("div");
+        div.classList.add("order");
+        div.textContent = `Zamówienie nr ${entry.number}`;
+        const age = (now - entry.time) / 1000;
+        if (age > 600) div.classList.add("red");
+        else if (age > 300) div.classList.add("yellow");
+
+        const btnConfirm = document.createElement("button");
+        btnConfirm.textContent = "Potwierdź odbiór";
+        btnConfirm.className = "action-btn";
+        btnConfirm.onclick = () => confirmOrder(key);
+
+        const btnRecall = document.createElement("button");
+        btnRecall.textContent = "Wywołaj ponownie";
+        btnRecall.className = "action-btn";
+        btnRecall.onclick = () => recallOrder(entry);
+
+        div.appendChild(btnConfirm);
+        div.appendChild(btnRecall);
+
+        history.appendChild(div);
+      });
+    });
+
+    // Obsługa klawiatury fizycznej
+    document.addEventListener("keydown", (e) => {
+      if (e.key >= "0" && e.key <= "9") appendNumber(e.key);
+      else if (e.key === "Backspace") backspace();
+      else if (e.key === "Enter") addOrder();
+    });
+  </script>
+</body>
+</html>
