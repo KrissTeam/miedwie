@@ -146,7 +146,8 @@
       audioPlayer.play().catch(() => { });
     });
 
-    db.ref("calls").on("value", (snapshot) => {
+    let lastPlayed = null;
+db.ref("calls").on("value", (snapshot) => {
       const data = snapshot.val();
       const callsDiv = document.getElementById("calls");
       callsDiv.innerHTML = "";
@@ -158,10 +159,11 @@
         const div = document.createElement("div");
         div.classList.add("number");
 
-        if (now - entry.time < 3000) {
+        if (now - entry.time < 1000) {
           div.classList.add("highlight");
 
-          if (audioEnabled && entry.number >= 1 && entry.number <= 120) {
+          if (audioEnabled && entry.number >= 1 && entry.number <= 120 && entry.number !== lastPlayed) {
+            lastPlayed = entry.number;
             audioPlayer.src = entry.number + ".mp3";
             audioPlayer.play().catch(e => console.log("Błąd odtwarzania:", e));
           }
