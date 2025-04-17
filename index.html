@@ -210,9 +210,12 @@ document.addEventListener('DOMContentLoaded', () => {
       const num = el.getAttribute('data-number');
       if (num) {
         const src = `mp3/${num}.mp3`;
+        audio.pause(); // przerwij ewentualne poprzednie odtwarzanie
+        audio.removeAttribute('src');
+        audio.load();
         audio.src = src;
         audio.load();
-        audio.play();
+        audio.play().catch(e => console.log(e));
         console.log("Odtwarzam numer:", num);
       }
     });
