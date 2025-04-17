@@ -205,15 +205,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.body.addEventListener('click', unlockAudio, { once: true });
 
-  document.querySelectorAll('.number').forEach(el => {
-    el.addEventListener('click', () => {
+  const numbers = document.querySelectorAll('.number[data-number]');
+  numbers.forEach(el => {
+    el.addEventListener('click', (e) => {
+      e.stopPropagation(); // Upewnij się, że klik obsługiwany jest tylko raz
       const num = el.getAttribute('data-number');
       if (num) {
-        const src = `mp3/${num}.mp3`;
-        audio.pause(); // przerwij ewentualne poprzednie odtwarzanie
+        audio.pause();
         audio.removeAttribute('src');
         audio.load();
-        audio.src = src;
+        audio.src = `mp3/${num}.mp3`;
         audio.load();
         audio.play().catch(e => console.log(e));
         console.log("Odtwarzam numer:", num);
