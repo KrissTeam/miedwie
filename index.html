@@ -205,10 +205,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.body.addEventListener('click', unlockAudio, { once: true });
 
-  const numbers = document.querySelectorAll('.number[data-number]');
-  numbers.forEach(el => {
-    el.addEventListener('click', (e) => {
-      e.stopPropagation(); // Upewnij się, że klik obsługiwany jest tylko raz
+  // Kliknięcie nadal działa
+  document.querySelectorAll('.number[data-number]').forEach(el => {
+    el.addEventListener('click', () => {
+      document.querySelectorAll('.number.highlight').forEach(e => e.classList.remove('highlight'));
+      el.classList.add('highlight');
       const num = el.getAttribute('data-number');
       if (num) {
         audio.pause();
@@ -220,6 +221,23 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log("Odtwarzam numer:", num);
       }
     });
+  });
+
+  // Obserwuj DOM i pilnuj tylko jednego .highlight
+  const observer = new MutationObserver(() => {
+    const highlighted = document.querySelectorAll('.number.highlight');
+    if (highlighted.length > 1) {
+      highlighted.forEach((el, index) => {
+        if (index > 0) el.classList.remove('highlight');
+      });
+    }
+  });
+
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+    attributeFilter: ['class']
   });
 });
 </script></body>
