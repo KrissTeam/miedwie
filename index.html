@@ -194,6 +194,7 @@
 document.addEventListener('DOMContentLoaded', () => {
   const audio = document.getElementById('audio-player');
   let unlocked = false;
+  let lastPlayed = null;
 
   function unlockAudio() {
     if (!unlocked) {
@@ -205,31 +206,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.body.addEventListener('click', unlockAudio, { once: true });
 
-  // Kliknięcie nadal działa
-  document.querySelectorAll('.number[data-number]').forEach(el => {
-    el.addEventListener('click', () => {
-      document.querySelectorAll('.number.highlight').forEach(e => e.classList.remove('highlight'));
-      el.classList.add('highlight');
-      const num = el.getAttribute('data-number');
-      if (num) {
-        audio.pause();
-        audio.removeAttribute('src');
-        audio.load();
-        audio.src = `mp3/${num}.mp3`;
-        audio.load();
-        audio.play().catch(e => console.log(e));
-        console.log("Odtwarzam numer:", num);
-      }
-    });
-  });
+  const playNumberAudio = (num) => {
+    if (!num || num === lastPlayed) return;
+    lastPlayed = num;
+    const src = `mp3/${num}.mp3`;
+    console.log("Resetuję audio, przygotowuję:", src);
+    audio.pause();
+    audio.removeAttribute('src');
+    audio.load();
+    audio.src = src;
+    audio.load();
+    audio.play().then(() => {
+      console.log("Odtwarzam numer:", num);
+    }).catch(e => console.error("Błąd odtwarzania:", e));
+  };
 
-  // Obserwuj DOM i pilnuj tylko jednego .highlight
+  // Obserwuj DOM pod kątem zmian .highlight
   const observer = new MutationObserver(() => {
-    const highlighted = document.querySelectorAll('.number.highlight');
-    if (highlighted.length > 1) {
-      highlighted.forEach((el, index) => {
-        if (index > 0) el.classList.remove('highlight');
-      });
+    const topHighlight = document.querySelector('.number.highlight');
+    if (topHighlight) {
+      const num = topHighlight.getAttribute('data-number');
+      playNumberAudio(num);
     }
   });
 
@@ -239,6 +236,7 @@ document.addEventListener('DOMContentLoaded', () => {
     attributes: true,
     attributeFilter: ['class']
   });
+
 });
 </script></body>
 </html>
